@@ -1,8 +1,10 @@
 #ifndef BEEP_H_
 #define BEEP_H_
 
-#define PCSPKR_MAGIC 1193180
+#define BEEP_FD "/dev/input/by-path/platform-pcspkr-event-spkr"
+#define BEEP_FREQ 490
+#define BEEP_LEN 25
 
-void beep(float freq, float length);
+int beep(float freq, float length);
 
 #endif // BEEP_H_

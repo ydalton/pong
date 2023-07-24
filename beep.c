@@ -1,11 +1,37 @@
-#include <linux/kd.h>
+#include <fcntl.h>
+#include <stdio.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+
+#include <linux/input.h>
+
 #include "beep.h"
 
-void beep(float freq, float length)
+int beep(float freq, float length)
 {
-    ioctl(STDOUT_FILENO, KIOCSOUND, PCSPKR_MAGIC/freq);
+    int fd = open(BEEP_FD, O_WRONLY);
+    if(fd == -1) {
+        perror("open");
+        return -1;
+    }
+	if(fd == -1) {
+		perror("open");
+	}
+	struct input_event e = {
+		.type = EV_SND,
+		.code = SND_TONE,
+		.value = freq,
+	};
+	if (sizeof(e) != write(fd, &e, sizeof(e))) {
+		perror("write:");
+		return -1;
+    }
     usleep(length * 1000);
-    ioctl(STDOUT_FILENO, KIOCSOUND, 0); /*Stop silly sound*/
+	e.value = 0;
+	if (sizeof(e) != write(fd, &e, sizeof(e))) {
+		perror("write:");
+		return -1;
+    }
+    close(fd);
+    return 0;
 }

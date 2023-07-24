@@ -2,14 +2,19 @@
  * Copyright (c) 2023 ydalton
  */
 
+#include <unistd.h>
+
 #include "log.h"
 #include "pong.h"
 #include "config.h"
 
 #if defined(BEEP) && defined(__linux__)
-#include "beep.h"
+# include "beep.h"
+# include <errno.h>
+# include <fcntl.h>
+# include <string.h>
 #else
-#undef BEEP
+# undef BEEP
 #endif
 
 #define FPS 60
@@ -17,6 +22,8 @@
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
+
+extern int errno;
 
 static int handle_event(struct pong_t *p, SDL_Event *e)
 {
@@ -95,6 +102,22 @@ void draw_pong(struct pong_t *pong)
 
 int main(void)
 {
+	if(geteuid() == 0) {
+		LOG_E("Please don't run this as root...\n");
+		return -1;
+	}
+#ifdef BEEP
+	/* probing the speaker if it works */
+	int fd = open(BEEP_FD, O_WRONLY);
+	if(fd == -1) {
+		LOG_E("Cannot open PC speaker: %s\n", strerror(errno));
+		LOG_E("Quitting...\n");
+		return -1;
+	}
+	close(fd);
+#endif
+
+
 	unsigned char running;
 	uint16_t ticks;
 
@@ -185,6 +208,9 @@ int main(void)
 				case PLAYER_PADDLE_HIT:
 				case ENEMY_PADDLE_HIT:
 					pong.ball.direction = -pong.ball.direction + M_PI;
+#ifdef BEEP
+					beep(BEEP_FREQ, BEEP_LEN);
+#endif
 					break;
 				case X_EDGE_HIT:
 					pong.ball.x = (float) game->framebuffer.width/2;
@@ -196,6 +222,9 @@ int main(void)
 					LOG_I("score\n");
 					break;
 				case Y_EDGE_HIT:
+#ifdef BEEP
+					beep(BEEP_FREQ*2, BEEP_LEN);
+#endif
 					pong.ball.direction = -pong.ball.direction;
 					break;
 				case NORMAL:

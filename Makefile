@@ -13,6 +13,6 @@ pong: $(OBJ)
 	$(CC) -o pong $(OBJ) $(CFLAGS)
 
 clean:
-	rm -f test $(OBJ)
+	rm -f pong $(OBJ)
 
-.PHONY: test clean
+.PHONY: pong clean
